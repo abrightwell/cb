@@ -106,7 +106,7 @@ op = OptionParser.new do |parser|
     action = scope = CB::Scope.new PROG.client
     parser.on("--cluster ID", "Choose cluster") { |arg| scope.cluster_id = arg }
     Scope::Check.all.each do |ck|
-      parser.on("--#{ck[:name]}", ck[:desc]) { }
+      parser.on(ck.flag, ck.desc) { }
     end
   end
 

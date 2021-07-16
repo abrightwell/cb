@@ -3,15 +3,19 @@ module Scope
   end
 
   abstract class Check
+    record Metadata, type : Check.class, name : String, desc : String, flag : String? = nil do
+      def flag
+        f = @flag || @name.downcase
+        "--#{f}"
+      end
+    end
+
     def self.all
       {{
         Check.subclasses.map do |s|
-          raise s.stringify + " is missing Meta annotation" unless s.annotation(Meta)
-          raise s.stringify + " is missing Meta :name annotation" unless s.annotation(Meta).named_args[:name]
-          raise s.stringify + " Meta :name annotation is not a string" unless s.annotation(Meta).named_args[:name].is_a? StringLiteral
-          raise s.stringify + " is missing Meta :desc' annotationg" unless s.annotation(Meta).named_args[:desc]
-          raise s.stringify + " Meta :desc annotation is not a string" unless s.annotation(Meta).named_args[:desc].is_a? StringLiteral
-          {type: s, name: s.annotation(Meta).named_args[:name], desc: s.annotation(Meta).named_args[:desc]}
+          ann = s.annotation(Meta)
+          raise "#{s} is missing Meta annotation" unless ann
+          "Metadata.new(#{s}, #{ann.args.empty? ? "".id : "#{ann.args.splat},".id}#{ann.named_args.double_splat})".id
         end
       }}
     end
@@ -31,7 +35,7 @@ module Scope
     end
   end
 
-  @[Meta(name: "three", desc: "A second check")]
+  @[Meta(name: "hi", flag: "greetings", desc: "A second check")]
   class Third < Check
     def go
       "sure"
