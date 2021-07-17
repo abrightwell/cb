@@ -1,3 +1,6 @@
+require "db"
+require "pg"
+
 module Scope
   annotation Meta
   end
@@ -16,29 +19,31 @@ module Scope
           ann = s.annotation(Meta)
           raise "#{s} is missing Meta annotation" unless ann
           "Metadata.new(#{s}, #{ann.args.empty? ? "".id : "#{ann.args.splat},".id}#{ann.named_args.double_splat})".id
-        end
+        end.sort(&.flag)
       }}
     end
-  end
 
-  @[Meta(name: "First", desc: "A first check")]
-  class First < Check
-    def go
-      "hi"
+    property conn : DB::Database
+
+    def initialize(@conn)
     end
-  end
 
-  @[Meta(name: "Check2", desc: "A second check")]
-  class Second < Check
-    def go
-      "no"
+    abstract def query
+
+    def run
+      simple_run
     end
-  end
 
-  @[Meta(name: "hi", flag: "greetings", desc: "A second check")]
-  class Third < Check
-    def go
-      "sure"
+    def simple_run
+      result = Array(Array(String)).new
+      conn.query(query) do |rs|
+        rs.each do
+          row = Array(String).new
+          rs.column_count.times { |i| row << rs.read.to_s }
+          result << row
+        end
+      end
+      pp result
     end
   end
 end

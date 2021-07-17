@@ -1,11 +1,13 @@
 require "./action"
-
-require "./scope_checks/check"
+require "./scope_checks/*"
 
 class CB::Scope < CB::Action
   property cluster_id : String?
 
   def call
-    p ::Scope::Check.all.first.type.new.go
+    uri = client.get_cluster_default_role(cluster_id).uri
+    DB.open(uri) do |db|
+      ::Scope::Check.all.map(&.type.new(db).run)
+    end
   end
 end
