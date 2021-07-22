@@ -32,7 +32,7 @@ module Scope
               (CASE WHEN datahdr%ma=0 THEN ma ELSE datahdr%ma END))+nullhdr2+4))/(bs-20::float)) AS otta
           FROM bloat_info
           JOIN pg_class cc ON cc.relname = bloat_info.tablename
-          JOIN pg_namespace nn ON cc.relnamespace = nn.oid AND nn.nspname = bloat_info.schemaname AND nn.nspname <> 'information_schema'
+          JOIN pg_namespace nn ON cc.relnamespace = nn.oid AND nn.nspname = bloat_info.schemaname AND nn.nspname <> 'information_schema' AND nn.nspname <> 'pg_catalog'
         ), index_bloat AS (
           SELECT
             schemaname, tablename, bs,
@@ -40,7 +40,7 @@ module Scope
             COALESCE(CEIL((c2.reltuples*(datahdr-12))/(bs-20::float)),0) AS iotta -- very rough approximation, assumes all cols
           FROM bloat_info
           JOIN pg_class cc ON cc.relname = bloat_info.tablename
-          JOIN pg_namespace nn ON cc.relnamespace = nn.oid AND nn.nspname = bloat_info.schemaname AND nn.nspname <> 'information_schema'
+          JOIN pg_namespace nn ON cc.relnamespace = nn.oid AND nn.nspname = bloat_info.schemaname AND nn.nspname <> 'information_schema' AND nn.nspname <> 'pg_catalog'
           JOIN pg_index i ON indrelid = cc.oid
           JOIN pg_class c2 ON c2.oid = i.indexrelid
         )
