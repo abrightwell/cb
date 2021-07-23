@@ -1,26 +1,24 @@
 require "./check"
 
 module Scope
-  @[Meta(name: "Cache Hit Rate", flag: "cache-hit", desc: "index and table cache hit rate")]
-  class CacheHit < Check
+  @[Meta(name: "Blocking Queries", desc: "queries holding locks that other queries are waiting on")]
+  class Calls < Check
     def query
       <<-SQL
-        SELECT
-          'index hit rate' AS name,
-          (sum(idx_blks_hit)) / nullif(sum(idx_blks_hit + idx_blks_read),0)::float AS ratio
-        FROM pg_statio_user_indexes
-        UNION ALL
-        SELECT
-         'table hit rate' AS name,
-          sum(heap_blks_hit) / nullif(sum(heap_blks_hit) + sum(heap_blks_read),0)::float AS ratio
-        FROM pg_statio_user_tables;
+        SELECT CASE WHEN length(query) <= 60 THEN query ELSE substr(query, 0, 59) || '…' END AS query,
+          interval '1 millisecond' * total_exec_time AS "exec time",
+          to_char((total_exec_time/sum(total_exec_time) OVER()) * 100, 'FM90D0') || '%'  AS "prop exec time",
+          to_char(calls, 'FM999G999G990') AS ncalls,
+          interval '1 millisecond' * (blk_read_time + blk_write_time) AS "sync io time"
+        FROM pg_stat_statements WHERE userid = (SELECT usesysid FROM pg_user WHERE usename = current_user LIMIT 1)
+        ORDER BY calls DESC LIMIT 10
       SQL
     end
   end
 end
 
 # SQL modified from
-# https://github.com/heroku/heroku-pg-extras/blob/6dded5b24375f14f6144165b88482ea9e79c11ef/commands/cache_hit.js
+# https://github.com/heroku/heroku-pg-extras/blob/6dded5b24375f14f6144165b88482ea9e79c11ef/commands/calls.js
 #
 # The MIT License (MIT)
 #

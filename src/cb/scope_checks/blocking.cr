@@ -1,26 +1,31 @@
 require "./check"
 
 module Scope
-  @[Meta(name: "Cache Hit Rate", flag: "cache-hit", desc: "index and table cache hit rate")]
-  class CacheHit < Check
+  @[Meta(name: "Blocking Queries", desc: "queries holding locks that other queries are waiting on")]
+  class Blocking < Check
     def query
       <<-SQL
-        SELECT
-          'index hit rate' AS name,
-          (sum(idx_blks_hit)) / nullif(sum(idx_blks_hit + idx_blks_read),0)::float AS ratio
-        FROM pg_statio_user_indexes
-        UNION ALL
-        SELECT
-         'table hit rate' AS name,
-          sum(heap_blks_hit) / nullif(sum(heap_blks_hit) + sum(heap_blks_read),0)::float AS ratio
-        FROM pg_statio_user_tables;
+        SELECT bl.pid AS "blocked pid",
+          ka.query               AS "blocking statement",
+          now() - ka.query_start AS "blocking duration",
+          kl.pid                 AS "blocking pid",
+          a.query                AS "blocked statement",
+          now() - a.query_start  AS "blocked duration"
+        FROM pg_catalog.pg_locks bl
+        JOIN pg_catalog.pg_stat_activity a
+          ON bl.pid = a.pid
+        JOIN pg_catalog.pg_locks kl
+          JOIN pg_catalog.pg_stat_activity ka
+            ON kl.pid = ka.pid
+        ON bl.transactionid = kl.transactionid AND bl.pid != kl.pid
+        WHERE NOT bl.granted
       SQL
     end
   end
 end
 
 # SQL modified from
-# https://github.com/heroku/heroku-pg-extras/blob/6dded5b24375f14f6144165b88482ea9e79c11ef/commands/cache_hit.js
+# https://github.com/heroku/heroku-pg-extras/blob/6dded5b24375f14f6144165b88482ea9e79c11ef/commands/blocking.js
 #
 # The MIT License (MIT)
 #

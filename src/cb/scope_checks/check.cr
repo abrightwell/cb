@@ -40,12 +40,21 @@ module Scope
     end
 
     def to_s(io : IO)
-      table = run
       s = name.try &.size || 0
-      io << "  ╭─" << "─"*s << "─╮\n"
-      io << "──┤ " << name.colorize.t_name << " ├" << "─"*(80 - 6 - s) << "\n"
-      io << "  ╰─" << "─"*s << "─╯\n"
-      io << table
+      if io.tty?
+        io << "  ╭─" << "─"*s << "─╮\n"
+        io << "──┤ " << name.colorize.t_name << " ├" << "─"*(80 - 6 - s) << "\n"
+        io << "  ╰─" << "─"*s << "─╯\n"
+      else
+        io << name << '\n'
+      end
+
+      begin
+        table = run
+        io << table
+      rescue e : PQ::PQError
+        io << "error running scope: #{e.message}"
+      end
     end
 
     def run : Table
