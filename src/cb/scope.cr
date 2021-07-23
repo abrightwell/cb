@@ -9,7 +9,9 @@ class CB::Scope < CB::Action
     #    uri = client.get_cluster_default_role(cluster_id).uri
     uri = "postgres:///"
     DB.open(uri) do |db|
-      ::Scope::Check.all.map(&.type.new(db).run)
+      ::Scope::Check.all.map(&.type.new(db)).each do |c|
+        @output << c << "\n"
+      end
     end
   end
 end

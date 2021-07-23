@@ -5,6 +5,7 @@ module Scope
   annotation Meta
   end
 
+  @[Meta]
   abstract class Check
     record Metadata, type : Check.class, name : String, desc : String, flag : String? = nil do
       def flag
@@ -30,7 +31,24 @@ module Scope
 
     abstract def query
 
-    def run
+    def name
+      {{ @type.annotation(Meta).named_args[:name] }}
+    end
+
+    def desc
+      {{ @type.annotation(Meta).named_args[:desc] }}
+    end
+
+    def to_s(io : IO)
+      table = run
+      s = name.try &.size || 0
+      io << "  ╭─" << "─"*s << "─╮\n"
+      io << "──┤ " << name.colorize.t_name << " ├" << "─"*(80 - 6 - s) << "\n"
+      io << "  ╰─" << "─"*s << "─╯\n"
+      io << table
+    end
+
+    def run : Table
       simple_run
     end
 
@@ -45,9 +63,8 @@ module Scope
           result << row
         end
       end
-      t = Table.new(headers, result)
 
-      puts t unless result.empty?
+      Table.new(headers, result)
     end
   end
 
@@ -65,11 +82,13 @@ module Scope
     end
 
     def to_s(io : IO)
-      headers.map_with_index { |h, i| h.center(widths[i]).colorize.t_name }.join(io, " │ ")
-      io << "\n"
+      io << "  "
+      headers.map_with_index { |h, i| h.center(widths[i]).colorize.t_alt }.join(io, " │ ")
+      io << "\n  "
       headers.map_with_index { |h, i| "─"*widths[i] }.join(io, "─┼─")
       io << "\n"
       rows.each do |cols|
+        io << "  "
         cols.map_with_index do |c, i|
           first = c[0]?
           if first.try &.ascii_number?

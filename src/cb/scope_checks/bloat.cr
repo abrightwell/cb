@@ -45,7 +45,7 @@ module Scope
           JOIN pg_class c2 ON c2.oid = i.indexrelid
         )
         SELECT
-          type, schemaname, object_name, bloat::float, pg_size_pretty(raw_waste) as waste
+          type, schemaname, object_name as "object name", bloat::float, pg_size_pretty(raw_waste) as waste
         FROM
         (SELECT
           'table' as type,
