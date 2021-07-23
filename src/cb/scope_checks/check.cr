@@ -43,11 +43,12 @@ module Scope
       s = name.try &.size || 0
       if io.tty?
         io << "  ╭─" << "─"*s << "─╮\n"
-        io << "──┤ " << name.colorize.t_name << " ├" << "─"*(80 - 6 - s) << "\n"
-        io << "  ╰─" << "─"*s << "─╯\n"
+        io << "──┤ " << name.colorize.t_name << " ├" << "─"*(80 - 6 - s) << '\n'
+        io << "  ╰─" << "─"*s << "─╯" << desc.try &.rjust(80 - 6 - s) << '\n'
       else
         io << name << '\n'
       end
+      io << '\n'
 
       begin
         table = run

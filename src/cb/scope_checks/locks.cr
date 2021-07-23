@@ -1,17 +1,24 @@
 require "./check"
 
 module Scope
-  @[Meta(name: "Slowest Calls", desc: "Top ten slowest queries")]
-  class Calls < Check
+  @[Meta(name: "Locks", desc: "Queries with active locks")]
+  class Locks < Check
     def query
       <<-SQL
-        SELECT CASE WHEN length(query) <= 60 THEN query ELSE substr(query, 0, 59) || '…' END AS query,
-          interval '1 millisecond' * total_exec_time AS "exec time",
-          to_char((total_exec_time/sum(total_exec_time) OVER()) * 100, 'FM90D0') || '%'  AS "prop exec time",
-          to_char(calls, 'FM999G999G990') AS ncalls,
-          interval '1 millisecond' * (blk_read_time + blk_write_time) AS "sync io time"
-        FROM pg_stat_statements WHERE userid = (SELECT usesysid FROM pg_user WHERE usename = current_user LIMIT 1)
-        ORDER BY calls DESC LIMIT 10
+        SELECT
+          pg_stat_activity.pid,
+          pg_class.relname,
+          pg_locks.transactionid AS "transaction id",
+          pg_locks.granted,
+          CASE WHEN length(pg_stat_activity.query) <= 60 THEN pg_stat_activity.query ELSE substr(pg_stat_activity.query, 0, 59) || '…' END as "query snippet",
+          age(now(),pg_stat_activity.query_start) AS "age"
+        FROM pg_stat_activity,pg_locks left
+        OUTER JOIN pg_class
+          ON (pg_locks.relation = pg_class.oid)
+        WHERE pg_stat_activity.query <> '<insufficient privilege>'
+          AND pg_locks.pid = pg_stat_activity.pid
+          AND pg_locks.mode = 'ExclusiveLock'
+          AND pg_stat_activity.pid <> pg_backend_pid() order by query_start;
       SQL
     end
   end
