@@ -1,7 +1,7 @@
 require "./check"
 
 module Scope
-  @[Meta(name: "Blocking Queries", desc: "queries holding locks that other queries are waiting on")]
+  @[Meta(name: "Blocking Queries", desc: "Queries holding locks that other queries are waiting on")]
   class Blocking < Check
     def query
       <<-SQL
@@ -24,8 +24,7 @@ module Scope
   end
 end
 
-# SQL modified from
-# https://github.com/heroku/heroku-pg-extras/blob/6dded5b24375f14f6144165b88482ea9e79c11ef/commands/blocking.js
+# SQL modified from https://github.com/heroku/heroku-pg-extras/releases/tag/v1.2.3
 #
 # The MIT License (MIT)
 #

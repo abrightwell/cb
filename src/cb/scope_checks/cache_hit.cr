@@ -1,7 +1,7 @@
 require "./check"
 
 module Scope
-  @[Meta(name: "Cache Hit Rate", flag: "cache-hit", desc: "index and table cache hit rate")]
+  @[Meta(name: "Cache Hit Rate", flag: "cache-hit", desc: "Index and table cache hit rate")]
   class CacheHit < Check
     def query
       <<-SQL
@@ -19,8 +19,7 @@ module Scope
   end
 end
 
-# SQL modified from
-# https://github.com/heroku/heroku-pg-extras/blob/6dded5b24375f14f6144165b88482ea9e79c11ef/commands/cache_hit.js
+# SQL modified from https://github.com/heroku/heroku-pg-extras/releases/tag/v1.2.3
 #
 # The MIT License (MIT)
 #

@@ -9,7 +9,7 @@ module Scope
   abstract class Check
     record Metadata, type : Check.class, name : String, desc : String, flag : String? = nil do
       def flag
-        f = @flag || @name.downcase
+        f = @flag || @name.downcase.gsub(' ', '-')
         "--#{f}"
       end
     end

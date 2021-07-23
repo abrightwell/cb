@@ -1,17 +1,19 @@
 require "./check"
 
 module Scope
-  @[Meta(name: "Blocking Queries", desc: "Queries holding locks that other queries are waiting on")]
-  class Calls < Check
+  @[Meta(name: "Index Size", desc: "Approximate size of indexes")]
+  class Blocking < Check
     def query
       <<-SQL
-        SELECT CASE WHEN length(query) <= 60 THEN query ELSE substr(query, 0, 59) || '…' END AS query,
-          interval '1 millisecond' * total_exec_time AS "exec time",
-          to_char((total_exec_time/sum(total_exec_time) OVER()) * 100, 'FM90D0') || '%'  AS "prop exec time",
-          to_char(calls, 'FM999G999G990') AS ncalls,
-          interval '1 millisecond' * (blk_read_time + blk_write_time) AS "sync io time"
-        FROM pg_stat_statements WHERE userid = (SELECT usesysid FROM pg_user WHERE usename = current_user LIMIT 1)
-        ORDER BY calls DESC LIMIT 10
+        SELECT c.relname AS name,
+          pg_size_pretty(sum(c.relpages::bigint*8192)::bigint) AS size
+        FROM pg_class c
+        LEFT JOIN pg_namespace n ON (n.oid = c.relnamespace)
+        WHERE n.nspname NOT IN ('pg_catalog', 'information_schema')
+        AND n.nspname !~ '^pg_toast'
+        AND c.relkind='i'
+        GROUP BY c.relname
+        ORDER BY sum(c.relpages) DESC;
       SQL
     end
   end

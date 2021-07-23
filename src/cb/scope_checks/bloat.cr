@@ -1,7 +1,7 @@
 require "./check"
 
 module Scope
-  @[Meta(name: "Bloat", desc: "table and index bloat")]
+  @[Meta(name: "Bloat", desc: "Table and index bloat")]
   class Bloat < Check
     def query
       <<-SQL
@@ -70,8 +70,7 @@ module Scope
   end
 end
 
-# SQL modified from
-# https://github.com/heroku/heroku-pg-extras/blob/6dded5b24375f14f6144165b88482ea9e79c11ef/commands/bloat.js
+# SQL modified from https://github.com/heroku/heroku-pg-extras/releases/tag/v1.2.3
 #
 # The MIT License (MIT)
 #
