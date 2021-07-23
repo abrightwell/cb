@@ -1,19 +1,20 @@
 require "./check"
 
 module Scope
-  @[Meta(name: "Index Size", desc: "Approximate size of indexes")]
-  class IndexSize < Check
+  @[Meta(name: "Index Hit Rate", flag: "index-hit", desc: "Calculate index hit rate")]
+  class IndexHit < Check
     def query
       <<-SQL
-        SELECT c.relname AS name,
-          pg_size_pretty(sum(c.relpages::bigint*8192)::bigint) AS size
-        FROM pg_class c
-        LEFT JOIN pg_namespace n ON (n.oid = c.relnamespace)
-        WHERE n.nspname NOT IN ('pg_catalog', 'information_schema')
-        AND n.nspname !~ '^pg_toast'
-        AND c.relkind='i'
-        GROUP BY c.relname
-        ORDER BY sum(c.relpages) DESC;
+        SELECT relname,
+           CASE idx_scan
+             WHEN 0 THEN 'Insufficient data'
+             ELSE (100 * idx_scan / (seq_scan + idx_scan))::text
+           END AS "percent of times index used",
+           n_live_tup AS "rows in table"
+         FROM
+           pg_stat_user_tables
+         ORDER BY
+           n_live_tup DESC;
       SQL
     end
   end

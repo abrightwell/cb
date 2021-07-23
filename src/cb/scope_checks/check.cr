@@ -53,7 +53,7 @@ module Scope
         table = run
         io << table
       rescue e : PQ::PQError
-        io << "error running scope: #{e.message}"
+        io << "  error running scope: #{e.message}"
       end
     end
 

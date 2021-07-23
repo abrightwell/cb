@@ -105,6 +105,7 @@ op = OptionParser.new do |parser|
     parser.banner = "Usage: cb scope <--cluster> [--(check),...]"
     action = scope = CB::Scope.new PROG.client
     parser.on("--cluster ID", "Choose cluster") { |arg| scope.cluster_id = arg }
+    parser.on("--suite <all|quick>", "run suite of scopes (default: quick)") { |arg| scope.suite = arg }
     Scope::Check.all.each do |ck|
       parser.on(ck.flag, ck.desc) { scope.checks << ck.type }
     end
