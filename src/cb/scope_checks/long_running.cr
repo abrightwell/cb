@@ -1,24 +1,22 @@
 require "./check"
 
 module Scope
-  @[Meta(name: "Locks", desc: "Queries with active locks")]
-  class Locks < Check
+  @[Meta(name: "Long Running Queries", flag: "long-running", desc: "Queries running for more than five minutes")]
+  class LongRunning < Check
     def query
       <<-SQL
         SELECT
-          pg_stat_activity.pid,
-          pg_class.relname,
-          pg_locks.transactionid AS "transaction id",
-          pg_locks.granted,
-          CASE WHEN length(pg_stat_activity.query) <= 60 THEN pg_stat_activity.query ELSE substr(pg_stat_activity.query, 0, 59) || '…' END as "query snippet",
-          age(now(),pg_stat_activity.query_start)::text AS "age"
-        FROM pg_stat_activity,pg_locks left
-        OUTER JOIN pg_class
-          ON (pg_locks.relation = pg_class.oid)
-        WHERE pg_stat_activity.query <> '<insufficient privilege>'
-          AND pg_locks.pid = pg_stat_activity.pid
-          AND pg_locks.mode = 'ExclusiveLock'
-          AND pg_stat_activity.pid <> pg_backend_pid() order by query_start;
+          pid,
+          (now() - pg_stat_activity.query_start)::text AS duration,
+          query AS query
+        FROM
+          pg_stat_activity
+        WHERE
+          pg_stat_activity.query <> ''::text
+          AND state <> 'idle'
+          AND now() - pg_stat_activity.query_start > interval '5 minutes'
+        ORDER BY
+          now() - pg_stat_activity.query_start DESC;
       SQL
     end
   end
